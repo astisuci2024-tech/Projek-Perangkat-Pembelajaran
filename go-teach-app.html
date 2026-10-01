@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GO TEACH — Smart Teaching Assistant</title>
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--ink:#0f172a;--muted:#64748b;--border:#e2e8f0;--blue:#0284C7;--green:#0F766E;--accent-bg:#eef6f8;--sidebar:#0b2436;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f172a;--card:#182333;--ink:#f1f5f9;--muted:#94a3b8;--border:#2a3a50;--accent-bg:#132433;}}
+:root[data-theme="dark"]{--bg:#0f172a;--card:#182333;--ink:#f1f5f9;--muted:#94a3b8;--border:#2a3a50;--accent-bg:#132433;}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{margin:0;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:230px;flex-shrink:0;background:var(--sidebar);color:#dbe6ee;padding:18px 12px;display:flex;flex-direction:column;gap:4px;}
+.brand{padding:6px 10px 18px;}
+.brand .logo{font-weight:800;font-size:1.25rem;color:#fff;}
+.brand .tag{font-size:.68rem;color:#9db4c4;margin-top:2px;line-height:1.3;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:.88rem;color:#c7d6e2;}
+.nav-item:hover{background:#123049;}
+.nav-item.active{background:var(--blue);color:#fff;}
+.main{flex:1;min-width:0;padding:22px 26px 60px;overflow-x:hidden;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.topbar h1{margin:0;font-size:1.35rem;}
+.topbar p{margin:2px 0 0;color:var(--muted);font-size:.85rem;}
+.theme-btn{border:1px solid var(--border);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:.85rem;}
+.view{display:none;} .view.active{display:block;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+.stat-card .num{font-size:1.6rem;font-weight:700;color:var(--blue);}
+.stat-card .lbl{color:var(--muted);font-size:.8rem;margin-top:2px;}
+.section-title{font-size:1rem;font-weight:700;margin:22px 0 10px;color:var(--ink);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
+.gen-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;}
+.gen-card:hover{border-color:var(--blue);}
+.gen-card .ic{font-size:1.4rem;}
+.gen-card h4{margin:8px 0 4px;font-size:.92rem;}
+.gen-card p{margin:0;color:var(--muted);font-size:.76rem;line-height:1.4;}
+.recent-list{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.recent-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);font-size:.85rem;gap:10px;}
+.recent-row:last-child{border-bottom:none;}
+.recent-row .meta{color:var(--muted);font-size:.74rem;}
+.empty{color:var(--muted);font-size:.85rem;padding:20px;text-align:center;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media (max-width:820px){.grid-2{grid-template-columns:1fr;} .sidebar{position:fixed;left:-240px;top:0;bottom:0;z-index:50;transition:left .2s;} .sidebar.open{left:0;} .main{padding:16px;} .menu-toggle{display:inline-block!important;}}
+.menu-toggle{display:none;border:1px solid var(--border);background:var(--card);color:var(--ink);padding:8px 10px;border-radius:8px;cursor:pointer;}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:.8rem;font-weight:600;margin-bottom:6px;color:var(--ink);}
+.field select,.field input{width:100%;padding:9px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--ink);font-size:.85rem;}
+.btn{background:var(--blue);color:#fff;border:none;padding:11px 18px;border-radius:9px;font-size:.88rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.btn-outline{background:transparent;color:var(--green);border:1px solid var(--green);}
+.spinner{width:14px;height:14px;border:2px solid #fff8;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.preview-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;min-height:340px;}
+.preview-card h3{margin-top:0;font-size:.95rem;color:var(--green);}
+.skeleton{height:14px;background:linear-gradient(90deg,var(--border) 25%,var(--accent-bg) 50%,var(--border) 75%);background-size:200% 100%;animation:sk 1.2s infinite;border-radius:4px;margin-bottom:10px;}
+@keyframes sk{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.skeleton.w60{width:60%;} .skeleton.w80{width:80%;} .skeleton.w40{width:40%;}
+.preview-body{white-space:pre-wrap;font-size:.85rem;line-height:1.65;color:var(--ink);}
+.export-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.export-btn{font-size:.76rem;border:1px solid var(--border);background:var(--bg);color:var(--muted);padding:7px 12px;border-radius:7px;cursor:not-allowed;}
+.hint{font-size:.72rem;color:var(--muted);margin-top:4px;}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;}
+.lib-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;}
+.lib-card:hover{border-color:var(--green);}
+.lib-card .n{font-size:.68rem;color:var(--green);font-weight:700;}
+.lib-card h4{margin:4px 0 4px;font-size:.86rem;}
+.lib-card p{margin:0;color:var(--muted);font-size:.74rem;}
+.modal-bg{display:none;position:fixed;inset:0;background:#0008;z-index:100;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card);border-radius:14px;max-width:560px;width:100%;max-height:84vh;overflow:auto;padding:24px;}
+.modal h3{margin-top:0;color:var(--blue);}
+.modal .close{float:right;cursor:pointer;color:var(--muted);font-size:1.1rem;}
+.modal .body{white-space:pre-wrap;font-size:.85rem;line-height:1.7;}
+.flip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+.flip-card{height:100px;perspective:800px;cursor:pointer;}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+.flip-face{position:absolute;inset:0;border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:.8rem;backface-visibility:hidden;}
+.flip-front{background:var(--blue);color:#fff;font-weight:700;}
+.flip-back{background:var(--green);color:#fff;transform:rotateY(180deg);font-size:.72rem;}
+.quiz-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:560px;}
+.quiz-opt{display:block;width:100%;text-align:left;padding:10px 14px;margin:7px 0;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--ink);cursor:pointer;font-size:.85rem;}
+.quiz-opt.correct{border-color:var(--green);background:#0F766E22;}
+.quiz-opt.wrong{border-color:#dc2626;background:#dc262622;}
+.quiz-opt:disabled{cursor:default;}
+.quiz-progress{font-size:.76rem;color:var(--muted);margin-bottom:10px;}
+.lkpd-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;}
+.lkpd-top{height:70px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;}
+.lkpd-body{padding:14px;}
+.lkpd-body h4{margin:0 0 4px;font-size:.88rem;}
+.lkpd-body p{margin:0;color:var(--muted);font-size:.74rem;}
+table.rubrik{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:10px;}
+table.rubrik th,table.rubrik td{border:1px solid var(--border);padding:8px;text-align:left;}
+table.rubrik th{background:var(--accent-bg);}
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
+.locked-view{text-align:center;padding:60px 20px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="logo">📘 GO TEACH</div><div class="tag">Smart Teaching Assistant for Vocational Accounting</div></div>
+    <div class="nav-item active" data-view="dashboard">🏠 Dashboard Utama</div>
+    <div class="nav-item" data-view="modul">📝 Modul Ajar & Perangkat</div>
+    <div class="nav-item" data-view="materi">🎬 Materi & Media</div>
+    <div class="nav-item" data-view="kuis">🧠 Bank Soal & Kuis</div>
+    <div class="nav-item" data-view="lkpd">📋 LKPD & Rubrik</div>
+    <div class="nav-item" data-view="simulator">🏪 Simulator Transaksi</div>
+    <div class="nav-item" data-view="akun">👤 Akun & Guru</div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><button class="menu-toggle" id="menuToggle">☰</button><h1 id="pageTitle">Dashboard Utama</h1><p id="pageSub">Ringkasan aktivitas mengajar kamu</p></div>
+      <button class="theme-btn" id="themeBtn">🌓 Mode Gelap/Terang</button>
+    </div>
+
+    <div class="view active" id="view-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="statCount">0</div><div class="lbl">Perangkat Tersimpan</div></div>
+        <div class="stat-card"><div class="num">10</div><div class="lbl">Modul Ajar Siap Pakai</div></div>
+        <div class="stat-card"><div class="num">10</div><div class="lbl">Bank Soal Aktif</div></div>
+      </div>
+      <div class="section-title">Quick Generator</div>
+      <div class="card-grid">
+        <div class="gen-card" data-view="modul"><div class="ic">📝</div><h4>Modul Ajar / RPP</h4><p>10 modul siap pakai + generator AI.</p></div>
+        <div class="gen-card" data-view="materi"><div class="ic">🎞️</div><h4>Slide Materi</h4><p>10 topik materi + flashcard interaktif.</p></div>
+        <div class="gen-card" data-view="kuis"><div class="ic">🧠</div><h4>Kuis Interaktif</h4><p>10 soal dengan skor real-time.</p></div>
+        <div class="gen-card" data-view="lkpd"><div class="ic">📋</div><h4>LKPD</h4><p>Studi kasus transaksi untuk kelas X.</p></div>
+      </div>
+      <div class="section-title">Perangkat Terbaru</div>
+      <div class="recent-list" id="recentList"><div class="empty">Belum ada perangkat tersimpan. Buat modul ajar pertamamu →</div></div>
+    </div>
+
+    <div class="view" id="view-modul">
+      <div class="section-title">Generator Modul Ajar (AI)</div>
+      <div class="grid-2">
+        <div class="form-card">
+          <div class="field"><label>Elemen Capaian Pembelajaran</label>
+            <select id="elemen"><option>Proses bisnis bidang akuntansi</option><option>Perkembangan teknologi di industri keuangan</option><option>Profesi dan entitas bisnis</option><option>Etika profesi akuntansi</option><option>Prinsip dasar akuntansi</option></select></div>
+          <div class="field"><label>Model Pembelajaran</label>
+            <select id="model"><option>Problem Based Learning (PBL)</option><option>Project Based Learning (PjBL)</option><option>Discovery Learning</option></select></div>
+          <div class="field"><label>Topik Spesifik (opsional)</label><input id="topik" type="text" placeholder="mis. Persamaan dasar akuntansi"></div>
+          <div class="field"><label>Alokasi Waktu</label><input id="waktu" type="text" value="4 JP @45 menit"></div>
+          <button class="btn" id="genBtn">✨ Generate with AI</button>
+          <div class="hint" id="genHint"></div>
+        </div>
+        <div class="preview-card"><h3>Pratinjau</h3>
+          <div id="previewArea"><div class="empty">Isi form lalu klik Generate with AI.</div></div>
+          <div class="export-row"><button class="export-btn">⬇ Word (.docx)</button><button class="export-btn">⬇ PDF</button><button class="btn-outline" style="display:none" id="saveBtn">💾 Simpan</button></div>
+        </div>
+      </div>
+      <div class="section-title">Perpustakaan Modul Ajar Siap Pakai (10)</div>
+      <div class="lib-grid" id="modulLib"></div>
+    </div>
+
+    <div class="view" id="view-materi">
+      <div class="section-title">Slide Materi (10 Topik)</div>
+      <div class="lib-grid" id="materiLib"></div>
+      <div class="section-title">Flashcard Interaktif — Istilah Dasar Akuntansi</div>
+      <div class="flip-grid" id="flipGrid"></div>
+    </div>
+
+    <div class="view" id="view-kuis">
+      <div class="section-title">Kuis Interaktif — 10 Soal</div>
+      <div class="quiz-card" id="quizArea"></div>
+    </div>
+
+    <div class="view" id="view-lkpd">
+      <div class="section-title">LKPD — Studi Kasus Transaksi (klik untuk buka)</div>
+      <div class="lib-grid" id="lkpdLib" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));"></div>
+      <div class="section-title">Rubrik Penilaian</div>
+      <table class="rubrik"><tr><th>Aspek</th><th>Sangat Baik (4)</th><th>Baik (3)</th><th>Cukup (2)</th><th>Kurang (1)</th></tr>
+      <tr><td>Kognitif (ketepatan analisis)</td><td>Seluruh akun tepat</td><td>Sebagian besar tepat</td><td>Sebagian kecil tepat</td><td>Banyak salah</td></tr>
+      <tr><td>Psikomotorik (saldo normal)</td><td>Posisi debit/kredit selalu tepat</td><td>Mayoritas tepat</td><td>Kadang keliru</td><td>Sering keliru</td></tr>
+      <tr><td>Sikap (Integritas, Teliti, Tanggung jawab)</td><td>Konsisten di semua kegiatan</td><td>Sering konsisten</td><td>Kadang-kadang</td><td>Jarang tampak</td></tr></table>
+    </div>
+
+    <div class="view" id="view-simulator">
+      <div class="section-title">Simulator Transaksi Otomatis</div>
+      <div class="sim-grid">
+        <div class="gen-card" data-sim="Laundry"><div class="ic">🧺</div><h4>Laundry Kiloan</h4><p>Jasa cuci &amp; setrika</p></div>
+        <div class="gen-card" data-sim="Salon"><div class="ic">💇</div><h4>Salon Kecantikan</h4><p>Jasa potong &amp; perawatan</p></div>
+        <div class="gen-card" data-sim="Bengkel"><div class="ic">🔧</div><h4>Bengkel Motor</h4><p>Jasa servis kendaraan</p></div>
+      </div>
+      <div class="preview-card"><h3>Transaksi Tersimulasi</h3><div id="simArea"><div class="empty">Pilih jenis usaha di atas.</div></div></div>
+    </div>
+
+    <div class="view" id="view-akun">
+      <div class="form-card" style="max-width:420px;">
+        <h3 style="margin-top:0;color:var(--blue);">Profil Guru</h3>
+        <div class="field"><label>Nama Guru</label><input type="text" placeholder="Nama lengkap"></div>
+        <div class="field"><label>Mapel Diampu</label><input type="text" value="Dasar-Dasar Akuntansi dan Keuangan Lembaga"></div>
+        <div class="field"><label>Fase / Kelas</label><input type="text" value="Fase E / Kelas X"></div>
+        <button class="btn-outline" style="width:100%;padding:10px;border-radius:9px;">Simpan Profil</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal"><span class="close" id="modalClose">✕</span><h3 id="modalTitle"></h3><div class="body" id="modalBody"></div></div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+let dbNs=null, sampleNs=null;
+
+document.querySelectorAll('.nav-item,.gen-card[data-view]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const v=el.dataset.view;
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.querySelectorAll('.nav-item[data-view="'+v+'"]').forEach(n=>n.classList.add('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    document.getElementById('view-'+v).classList.add('active');
+    const titles={dashboard:'Dashboard Utama',modul:'Modul Ajar & Perangkat',materi:'Materi & Media',kuis:'Bank Soal & Kuis',lkpd:'LKPD & Rubrik',simulator:'Simulator Transaksi',akun:'Akun & Guru'};
+    $('#pageTitle').textContent=titles[v]||v;
+    $('#pageSub').textContent='Fase E / Kelas X — Dasar-Dasar Akuntansi dan Keuangan Lembaga';
+    $('#sidebar').classList.remove('open');
+  });
+});
+$('#menuToggle').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+$('#themeBtn').addEventListener('click',()=>{const c=document.documentElement.getAttribute('data-theme');document.documentElement.setAttribute('data-theme',c==='dark'?'light':'dark');});
+
+function openModal(title,body){$('#modalTitle').textContent=title;$('#modalBody').textContent=body;$('#modalBg').classList.add('open');}
+$('#modalClose').addEventListener('click',()=>$('#modalBg').classList.remove('open'));
+$('#modalBg').addEventListener('click',e=>{if(e.target.id==='modalBg')$('#modalBg').classList.remove('open');});
+
+// ===== Modul Ajar Library (10) =====
+const modulLib=[
+["Proses Bisnis Akuntansi","PBL","Siswa mengidentifikasi alur proses bisnis dari pembelian hingga pelaporan pada perusahaan jasa."],
+["Teknologi Keuangan Digital","PjBL","Siswa membuat proyek mini membandingkan pencatatan manual vs aplikasi akuntansi digital."],
+["Profesi & Entitas Bisnis","Discovery Learning","Siswa menggali ragam profesi akuntansi dan bentuk badan usaha di sekitar mereka."],
+["Etika Profesi Akuntan","PBL","Studi kasus dilema etis seorang staf akuntansi dan cara menanganinya."],
+["Persamaan Dasar Akuntansi","Discovery Learning","Eksplorasi hubungan Aset = Liabilitas + Ekuitas lewat transaksi sederhana."],
+["Siklus Akuntansi Perusahaan Jasa","PjBL","Proyek menyusun siklus akuntansi penuh dari jurnal sampai laporan keuangan."],
+["Dokumen Sumber Transaksi","PBL","Analisis kwitansi, nota, dan faktur sebagai bukti pencatatan."],
+["Jurnal Umum & Posting","Discovery Learning","Latihan mencatat transaksi ke jurnal umum lalu posting ke buku besar."],
+["Neraca Saldo","PjBL","Proyek kelompok menyusun neraca saldo dari data transaksi fiktif."],
+["Laporan Keuangan Sederhana","PBL","Studi kasus menyusun laporan laba rugi dan neraca perusahaan jasa mikro."]
+];
+$('#modulLib').innerHTML=modulLib.map((m,i)=>'<div class="lib-card" data-i="'+i+'"><div class="n">MODUL '+(i+1)+'</div><h4>'+m[0]+'</h4><p>Model: '+m[1]+'</p></div>').join('');
+document.querySelectorAll('#modulLib .lib-card').forEach(c=>c.addEventListener('click',()=>{
+  const m=modulLib[c.dataset.i];
+  openModal(m[0],'Model Pembelajaran: '+m[1]+'\n\nDeskripsi Kegiatan:\n'+m[2]+'\n\nTujuan Pembelajaran:\n1. Memahami konsep inti topik ini.\n2. Mengaplikasikan konsep pada kasus nyata.\n3. Mempresentasikan hasil analisis secara kelompok.\n\nAsesmen: diagnostik (kuis awal), formatif (observasi kerja kelompok), sumatif (produk/laporan akhir).');
+}));
+
+// ===== Materi Slide Library (10) =====
+const materiLib=[
+["Pengenalan Akuntansi","Definisi, tujuan, dan manfaat akuntansi bagi bisnis."],
+["Bidang-bidang Akuntansi","Akuntansi keuangan, manajemen, pajak, dan audit."],
+["Profesi Akuntansi","Akuntan publik, internal, pajak, dan pendidik."],
+["Etika Profesi","Prinsip integritas, objektivitas, dan kerahasiaan."],
+["Persamaan Dasar Akuntansi","Aset = Liabilitas + Ekuitas dengan contoh kasus."],
+["Akun & Kode Akun","Pengelompokan akun riil dan nominal."],
+["Mekanisme Debit-Kredit","Skema penambahan/pengurangan tiap jenis akun."],
+["Dokumen Transaksi","Kwitansi, nota, faktur, dan bukti kas."],
+["Jurnal Umum","Format dan cara mencatat transaksi ke jurnal."],
+["Siklus Akuntansi","Alur dari transaksi hingga laporan keuangan."]
+];
+$('#materiLib').innerHTML=materiLib.map((m,i)=>'<div class="lib-card" data-i="'+i+'"><div class="n">SLIDE '+(i+1)+'</div><h4>'+m[0]+'</h4><p>'+m[1]+'</p></div>').join('');
+document.querySelectorAll('#materiLib .lib-card').forEach(c=>c.addEventListener('click',()=>{
+  const m=materiLib[c.dataset.i];
+  openModal(m[0],'Poin Materi:\n\n'+m[1]+'\n\nCatatan: gunakan slide ini sebagai pengantar sebelum sesi praktik/diskusi kelompok.');
+}));
+
+// ===== Flashcards (8) =====
+const cards=[["Aset","Sumber daya yang dimiliki & dikendalikan perusahaan"],["Liabilitas","Kewajiban perusahaan ke pihak lain"],["Ekuitas","Hak pemilik atas aset perusahaan"],["Pendapatan","Kenaikan ekonomi dari aktivitas usaha"],["Beban","Penurunan ekonomi akibat aktivitas usaha"],["Saldo Normal","Posisi debit/kredit bawaan suatu akun"],["Debit","Sisi kiri pencatatan akuntansi"],["Kredit","Sisi kanan pencatatan akuntansi"]];
+$('#flipGrid').innerHTML=cards.map((c,i)=>'<div class="flip-card" data-i="'+i+'"><div class="flip-inner"><div class="flip-face flip-front">'+c[0]+'</div><div class="flip-face flip-back">'+c[1]+'</div></div></div>').join('');
+document.querySelectorAll('.flip-card').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('flipped')));
+
+// ===== Quiz (10 questions) =====
+const quiz=[
+["Rumus persamaan dasar akuntansi adalah...",["Aset = Liabilitas + Ekuitas","Aset = Pendapatan - Beban","Ekuitas = Aset + Liabilitas","Liabilitas = Aset + Ekuitas"],0],
+["Akun yang bersaldo normal debit adalah...",["Aset","Liabilitas","Ekuitas","Pendapatan"],0],
+["Bukti transaksi pembelian tunai disebut...",["Nota","Cek","Giro","Memo"],0],
+["Sisi kiri dalam pencatatan akuntansi disebut...",["Debit","Kredit","Saldo","Jurnal"],0],
+["Kewajiban perusahaan kepada pihak luar disebut...",["Liabilitas","Aset","Ekuitas","Beban"],0],
+["Tahap pertama siklus akuntansi adalah...",["Mencatat transaksi ke jurnal","Menyusun laporan keuangan","Membuat neraca saldo","Posting ke buku besar"],0],
+["Kenaikan ekonomi dari penjualan jasa disebut...",["Pendapatan","Beban","Liabilitas","Ekuitas"],0],
+["Contoh profesi akuntansi internal adalah...",["Staf akuntansi perusahaan","Akuntan publik","Notaris","Pengacara"],0],
+["Prinsip etika yang melarang membocorkan data klien disebut...",["Kerahasiaan","Objektivitas","Kompetensi","Integritas"],0],
+["Buku besar digunakan untuk...",["Mengelompokkan transaksi per akun","Mencatat transaksi pertama kali","Menyimpan bukti transaksi","Membuat anggaran"],0]
+];
+let qi=0,score=0;
+function renderQuiz(){
+  const area=$('#quizArea');
+  if(qi>=quiz.length){area.innerHTML='<h3>Selesai!</h3><p>Skor kamu: <strong>'+score+' / '+quiz.length+'</strong></p><button class="btn" id="restartQuiz">🔄 Ulangi Kuis</button>';$('#restartQuiz').onclick=()=>{qi=0;score=0;renderQuiz();};return;}
+  const q=quiz[qi];
+  area.innerHTML='<div class="quiz-progress">Soal '+(qi+1)+' dari '+quiz.length+' · Skor: '+score+'</div><h3 style="margin-top:0;">'+q[0]+'</h3>'+q[1].map((o,i)=>'<button class="quiz-opt" data-i="'+i+'">'+o+'</button>').join('');
+  document.querySelectorAll('.quiz-opt').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.i;
+    document.querySelectorAll('.quiz-opt').forEach(x=>x.disabled=true);
+    if(i===q[2]){b.classList.add('correct');score++;}else{b.classList.add('wrong');document.querySelectorAll('.quiz-opt')[q[2]].classList.add('correct');}
+    setTimeout(()=>{qi++;renderQuiz();},900);
+  }));
+}
+renderQuiz();
+
+// ===== LKPD (6 case studies, styled) =====
+const lkpd=[
+["🧺","#0284C7","Laundry Kiloan","Setoran modal, pembelian deterjen, pendapatan jasa cuci"],
+["💇","#0F766E","Salon Kecantikan","Pembelian alat salon, pendapatan jasa potong, beban listrik"],
+["🔧","#b8892b","Bengkel Motor","Pembelian sparepart, pendapatan servis, beban sewa tempat"],
+["🛒","#dc2626","Toko Kelontong","Pembelian barang dagang, penjualan tunai, beban angkut"],
+["🖨️","#7c3aed","Jasa Fotokopi","Pembelian kertas & tinta, pendapatan jasa cetak"],
+["🎮","#059669","Rental PlayStation","Pembelian unit baru, pendapatan sewa per jam"]
+];
+$('#lkpdLib').innerHTML=lkpd.map((l,i)=>'<div class="lkpd-card" data-i="'+i+'"><div class="lkpd-top" style="background:'+l[1]+'">'+l[0]+'</div><div class="lkpd-body"><h4>'+l[2]+'</h4><p>'+l[3]+'</p></div></div>').join('');
+document.querySelectorAll('#lkpdLib .lkpd-card').forEach(c=>c.addEventListener('click',()=>{
+  const l=lkpd[c.dataset.i];
+  openModal('LKPD — '+l[2],'Studi Kasus:\n'+l[3]+'.\n\nInstruksi:\n1. Identifikasi jenis akun pada setiap transaksi.\n2. Tentukan posisi debit/kredit sesuai saldo normal.\n3. Susun jurnal umum untuk satu bulan transaksi.\n4. Hitung saldo akhir tiap akun.\n5. Presentasikan hasil kerja kelompok.');
+}));
+
+// ===== Simulator =====
+const simData={
+Laundry:["Setoran modal awal Rp3.000.000","Beli deterjen & pewangi Rp250.000","Pendapatan cuci 20kg Rp100.000","Bayar listrik bulan ini Rp150.000","Pendapatan setrika 15kg Rp75.000"],
+Salon:["Setoran modal awal Rp5.000.000","Beli alat potong rambut Rp600.000","Pendapatan jasa potong Rp300.000","Bayar sewa tempat Rp500.000","Pendapatan creambath Rp150.000"],
+Bengkel:["Setoran modal awal Rp8.000.000","Beli sparepart oli & ban Rp1.200.000","Pendapatan servis motor Rp400.000","Bayar gaji montir Rp600.000","Pendapatan tambal ban Rp50.000"]
+};
+document.querySelectorAll('[data-sim]').forEach(el=>el.addEventListener('click',()=>{
+  const d=simData[el.dataset.sim];
+  $('#simArea').innerHTML='<strong>'+el.dataset.sim+' — 5 Transaksi Bulan Ini</strong><ol style="padding-left:18px;font-size:.85rem;line-height:1.9;">'+d.map(x=>'<li>'+x+'</li>').join('')+'</ol>';
+}));
+
+// ===== DB & AI (Modul Ajar Generator) =====
+async function initCaps(){try{dbNs=await window.claude.use('db');}catch(e){dbNs=null;}try{sampleNs=await window.claude.use('sample');}catch(e){sampleNs=null;}loadRecent();}
+if(window.claude){initCaps();}
+async function loadRecent(){
+  if(!dbNs)return;
+  try{
+    const res=await dbNs.collection('modul_ajar').orderBy('createdAt','desc').limit(5).get();
+    const docs=res.docs||[];
+    $('#statCount').textContent=docs.length;
+    if(docs.length===0)return;
+    $('#recentList').innerHTML=docs.map(d=>{const v=d.data||{};return '<div class="recent-row"><div><strong>'+(v.elemen||'Modul Ajar')+'</strong><div class="meta">'+(v.model||'')+' · '+(v.topik||'-')+'</div></div><div class="meta">tersimpan</div></div>';}).join('');
+  }catch(e){}
+}
+$('#genBtn').addEventListener('click', async ()=>{
+  const elemen=$('#elemen').value,model=$('#model').value,topik=$('#topik').value||'(umum sesuai elemen)',waktu=$('#waktu').value||'4 JP @45 menit';
+  const btn=$('#genBtn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Menyusun modul...';
+  $('#previewArea').innerHTML='<div class="skeleton w80"></div><div class="skeleton w60"></div><div class="skeleton"></div><div class="skeleton w40"></div>';
+  $('#genHint').textContent='';$('#saveBtn').style.display='none';
+  if(!sampleNs){$('#previewArea').innerHTML='<div class="empty">Fitur "Generate with AI" butuh dibuka lewat claude.ai.</div>';btn.disabled=false;btn.innerHTML='✨ Generate with AI';return;}
+  const prompt='Buat modul ajar singkat (Kurikulum Merdeka, Fase E, Kelas X SMK, mapel Dasar-Dasar Akuntansi dan Keuangan Lembaga) teks polos. Elemen: '+elemen+'. Model: '+model+'. Topik: '+topik+'. Waktu: '+waktu+'. Sertakan TUJUAN PEMBELAJARAN, PEMAHAMAN BERMAKNA, PERTANYAAN PEMANTIK, KEGIATAN PEMBELAJARAN, ASESMEN. Maks 300 kata.';
+  let full='';
+  try{
+    const result=await sampleNs(prompt,{modelTier:'quick',onText:({text})=>{full=text;$('#previewArea').innerHTML='<div class="preview-body">'+escapeHtml(text)+'</div>';}});
+    full=result.text;$('#previewArea').innerHTML='<div class="preview-body">'+escapeHtml(full)+'</div>';$('#saveBtn').style.display='inline-flex';
+    $('#saveBtn').onclick=async()=>{if(!dbNs){$('#genHint').textContent='Penyimpanan tidak tersedia.';return;}try{await dbNs.collection('modul_ajar').add({elemen,model,topik,waktu,content:full,createdAt:Date.now()});$('#genHint').textContent='Tersimpan ✓';loadRecent();}catch(e){$('#genHint').textContent='Gagal menyimpan.';}};
+  }catch(e){
+    const code=e&&e.code;
+    if(code==='not_granted'){$('#previewArea').innerHTML='<div class="empty">Izin AI ditolak.</div>';}
+    else if(code==='rate_limited'){$('#previewArea').innerHTML='<div class="empty">Terlalu banyak permintaan, coba lagi.</div>';}
+    else{$('#previewArea').innerHTML='<div class="empty">Terjadi kendala saat generate.</div>';}
+  }
+  btn.disabled=false;btn.innerHTML='✨ Generate with AI';
+});
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+</script>
+</body>
+</html>
